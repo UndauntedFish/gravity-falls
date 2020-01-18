@@ -30,45 +30,68 @@ public class Main extends JavaPlugin implements Listener
 		saveDefaultConfig();
 	}
 	
-	private ArrayList<Block> getSurroundingBlocks(Location location)
+	private void editSurroundingBlocks(Player player)
 	{
-		ArrayList<Block> surroundingBlocks = new ArrayList<>();
+		Location location = player.getLocation();
+		double radius = this.getConfig().getDouble("radius");
 		
-		Location ptr = location.add(new Vector(-5, -5, -5));
+		double x1 = location.getX() - radius;
+		double y1 = location.getY() - radius;
+		double z1 = location.getZ() - radius;
+		double x2 = x1 + (radius * 2);
+		double y2 = y1 + (radius * 2);
+		double z2 = z1 + (radius * 2);
 		
-		for (int i = 0; i < 10 ; i++)
+		Location ptr;
+		for (double y = y1; y < y2; y++)
 		{
-			for (int j = 0; j < 10; j++)
+			for (double x = x1; x < x2; x++)
 			{
-				ptr.add(new Vector(j, i, j));
-				
-				Block ptrBlock = ptr.getBlock();
-				
-				if (ptrBlock.getType() != Material.AIR || 
-					ptrBlock.getType() != Material.WATER || 
-					ptrBlock.getType() != Material.LAVA ||
-					ptrBlock.getType() != Material.OBSIDIAN ||
-					ptrBlock.getType() != Material.BEDROCK ||
-					ptrBlock.getType() != Material.END_STONE)
+				for (double z = z1; z < z2; z++)
 				{
-					surroundingBlocks.add(ptrBlock);
+					ptr = new Location(player.getWorld(), x, y, z);
+					Block ptrBlock = ptr.getBlock();
+					ptr.getWorld().spawnFallingBlock(ptr, ptrBlock.getState().getData());
+					ptrBlock.setType(Material.AIR);
 				}
 			}
 		}
-		
-		return surroundingBlocks;
 			
+		
+		/*
+		for (double i = x - 5; i < x + 5; x++)
+		{
+			for (double j = z - 5; j < z + 5; j++)
+			{
+				for (double k = y - 5; k < y + 5; y++)
+				{
+					Location loc = new Location(player.getWorld(), i, k, j);
+					Block ptrBlock = loc.getBlock();
+					
+					if (ptrBlock.getType() == Material.AIR ||
+						ptrBlock.getType() == Material.LAVA ||
+						ptrBlock.getType() == Material.WATER ||
+						ptrBlock.getType() == Material.OBSIDIAN ||
+						ptrBlock.getType() == Material.END_PORTAL ||
+						ptrBlock.getType() == Material.END_PORTAL_FRAME ||
+						ptrBlock.getType() == Material.END_STONE ||
+						ptrBlock.getType() == Material.BEDROCK)
+					{
+						return;
+					}
+					
+					;;
+				}
+			}
+			
+		}
+		*/
 	}
 	
 	@EventHandler
 	public void onMove(PlayerMoveEvent e)
 	{
 		Player player = e.getPlayer();
-		surroundingBlocks = getSurroundingBlocks(player.getLocation());
-		
-		for (Block b : surroundingBlocks)
-		{
-			b.setType(Material.WATER);
-		}
+		editSurroundingBlocks(player);
 	}
 }
