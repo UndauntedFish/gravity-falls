@@ -1,0 +1,5 @@
+main: com.ben.gravityfalls.Main
+name: GravityFalls
+description: Makes all the floating blocks around every player in the server fall like sand.
+api-version: 1.13
+version: 1.0
