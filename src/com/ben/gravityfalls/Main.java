@@ -1,7 +1,6 @@
 package com.ben.gravityfalls;
 
 import java.util.ArrayList;
-import java.util.Collection;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -14,6 +13,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin implements Listener
 {
+	public ArrayList<Block> cuboid = new ArrayList<>();
+	public double radius;
 	
 	@Override
 	public void onEnable()
@@ -30,95 +31,80 @@ public class Main extends JavaPlugin implements Listener
 	}
 	
 	
-	private ArrayList<Block> buildXYStack(Location bottom)
+	/*
+	 * Assuming cuboid arraylist is already filled with buildSquare(), builds a cube out of tha square by building
+	 * up on the y axis for each block
+	 */
+	private void buildCube()
 	{
-		ArrayList<Block> allXYs;
-		Collection<Block> allZs;
-		allXYs = new ArrayList<>();
-		allZs = new ArrayList<>();
-		
-		double radius = this.getConfig().getDouble("radius");
-		Location ptr = bottom;
-		
-		// Creates XY Square
-		for (double x = 0.0; x < radius * 2.0; x++)
+		for (Block b : cuboid)
 		{
-			for (double y = 0.0; y < radius * 2.0; y++)
+			for (double i = 1.0; i < radius; i++)
 			{
-				ptr.add(x, y, 0.0);
-				allXYs.add(ptr.getBlock());
+				cuboid.add(b.getLocation().add(0.0, i, 0.0).getBlock());
 			}
 		}
-		ptr = bottom;
-		
-		for (Block b : allXYs)
+	}
+
+	/*
+	 * Assuming cuboid arraylist is already filled with buildLine(), builds a square out of that line by building
+	 * up on the z axis for each block.
+	 */
+	private void buildSquare()
+	{
+		for (Block b : cuboid)
 		{
-			for (double z = 1.0; z < radius * 2.0; z++)
+			for (double i = 1.0; i < radius; i++)
 			{
-				Location tempLocale = b.getLocation().add(0.0, 0.0, z);
-				allZs.add(tempLocale.getBlock());
+				cuboid.add(b.getLocation().add(0.0, 0.0, i).getBlock());
 			}
 		}
+	}
+	
+	/*
+	 * Builds the bottom line of the square base of the cube given the central location, then adds that line to the cuboid arraylist
+	 */
+	private void buildLine(Location l)
+	{
+		// Gets the bottomCenter from the central location and adds it to cuboid arraylist
+		Location bottomCenter = l.add(0.0, 0.0, -radius);
+		cuboid.add(bottomCenter.getBlock());
 		
-		for (Block b : allZs)
+		
+		// Adds all the blocks to the left and right of bottomCenter to cuboid arraylist
+		Location ptrLeft = bottomCenter, ptrRight = bottomCenter;
+		for (double i = 1.0; i < radius; i++)
 		{
-			allXYs.add(b);
+			cuboid.add(ptrLeft.add(-i, 0.0, 0.0).getBlock());
+			cuboid.add(ptrRight.add(i, 0.0, 0.0).getBlock());
 		}
+	}
+	
+	private void buildCubeAround(Player player)
+	{
+		Location location = player.getLocation();
+		location.setY(location.getY() - 2.0); // sets location to the block below the player
 		
-		/* Creates Z-Deep Cube from the XY Squares
-		for (double x = 0.0; x < radius * 2; x++)
-		{
-			for (double z = 0.0; z < radius * 2; z++)
-			{
-				ptr.add(x, 0.0, z);
-				allXYs.add(ptr.getBlock());
-			}
-		}
-		*/
-		
-		return allXYs;
+		buildLine(location);
+		buildSquare();
+		buildCube();
 	}
 	
 	
-	private void editSurroundingBlocks(Player player)
+	public void editBlocksInCube(Player player)
 	{
-		Location location = player.getLocation();
-		double radius = this.getConfig().getDouble("radius");
+		buildCubeAround(player);
 		
-		double x1 = location.getX() - radius;
-		double y1 = location.getY() - radius;
-		double z1 = location.getZ() - radius;
-		
-		Location bottom = new Location(player.getWorld(), x1, y1, z1);
-		ArrayList<Block> surroundingBlocks = buildXYStack(bottom);
-		
-		for (Block b : surroundingBlocks)
+		for (Block b : cuboid)
 		{
 			b.setType(Material.GLASS);
 		}
-		
-		/*
-		Location ptr;
-		for (double y = y1; y < y2; y++)
-		{
-			for (double x = x1; x < x2; x++)
-			{
-				for (double z = z1; z < z2; z++)
-				{
-					ptr = new Location(player.getWorld(), x, y, z);
-					Block ptrBlock = ptr.getBlock();
-					ptr.getWorld().spawnFallingBlock(ptr, ptrBlock.getState().getData());
-					ptrBlock.setType(Material.AIR);
-				}
-			}
-		}
-		*/
 	}
 	
 	@EventHandler
 	public void onMove(PlayerMoveEvent e)
 	{
 		Player player = e.getPlayer();
-		editSurroundingBlocks(player);
+		editBlocksInCube(player);
 	}
 }
