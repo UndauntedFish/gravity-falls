@@ -2,7 +2,8 @@ package com.ben.gravityfalls;
 
 import java.util.ArrayList;
 
-import org.bukkit.Location;
+import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -10,6 +11,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import net.md_5.bungee.api.ChatColor;
 
 public class Main extends JavaPlugin implements Listener
 {
@@ -19,9 +22,10 @@ public class Main extends JavaPlugin implements Listener
 	@Override
 	public void onEnable()
 	{
-		loadConfig();
-		
 		this.getServer().getPluginManager().registerEvents(this, this);
+
+		loadConfig();
+		radius = this.getConfig().getDouble("radius");
 	}
 	
 	private void loadConfig()
@@ -31,74 +35,36 @@ public class Main extends JavaPlugin implements Listener
 	}
 	
 	
-	/*
-	 * Assuming cuboid arraylist is already filled with buildSquare(), builds a cube out of tha square by building
-	 * up on the y axis for each block
-	 */
-	private void buildCube()
-	{
-		for (Block b : cuboid)
-		{
-			for (double i = 1.0; i < radius; i++)
-			{
-				cuboid.add(b.getLocation().add(0.0, i, 0.0).getBlock());
-			}
-		}
-	}
-
-	/*
-	 * Assuming cuboid arraylist is already filled with buildLine(), builds a square out of that line by building
-	 * up on the z axis for each block.
-	 */
-	private void buildSquare()
-	{
-		for (Block b : cuboid)
-		{
-			for (double i = 1.0; i < radius; i++)
-			{
-				cuboid.add(b.getLocation().add(0.0, 0.0, i).getBlock());
-			}
-		}
-	}
-	
-	/*
-	 * Builds the bottom line of the square base of the cube given the central location, then adds that line to the cuboid arraylist
-	 */
-	private void buildLine(Location l)
-	{
-		// Gets the bottomCenter from the central location and adds it to cuboid arraylist
-		Location bottomCenter = l.add(0.0, 0.0, -radius);
-		cuboid.add(bottomCenter.getBlock());
-		
-		
-		// Adds all the blocks to the left and right of bottomCenter to cuboid arraylist
-		Location ptrLeft = bottomCenter, ptrRight = bottomCenter;
-		for (double i = 1.0; i < radius; i++)
-		{
-			cuboid.add(ptrLeft.add(-i, 0.0, 0.0).getBlock());
-			cuboid.add(ptrRight.add(i, 0.0, 0.0).getBlock());
-		}
-	}
-	
-	private void buildCubeAround(Player player)
-	{
-		Location location = player.getLocation();
-		location.setY(location.getY() - 2.0); // sets location to the block below the player
-		
-		buildLine(location);
-		buildSquare();
-		buildCube();
-	}
-	
-	
 	public void editBlocksInCube(Player player)
 	{
-		buildCubeAround(player);
-		
-		for (Block b : cuboid)
+		if (this.getConfig().getInt("ymax") < 0)
 		{
-			b.setType(Material.GLASS);
+			Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "ERROR! ymax must be greater than 0 in the config!");
+			return;
 		}
+		if (this.getConfig().getInt("ymax") > 127)
+		{
+			Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "ERROR! ymax must be less than 127 in the config!");
+			return;
+		}
+		int ymax = this.getConfig().getInt("ymax");
+		
+		// Iterating through each block of the chunk that the player is in
+		Chunk c = player.getLocation().getChunk();
+		int bcount = 0;
+		for (int y = 0; y < ymax; y++)
+		{
+			for (int x = 0; x < 15; x++)
+			{
+				for (int z = 0; z < 15; z++)
+				{
+					c.getBlock(x, y, z).setType(Material.BLACK_STAINED_GLASS);
+					bcount++;
+				}
+			}	
+		}
+		player.sendMessage(ChatColor.GOLD + "" + bcount);
+		
 	}
 	
 	@EventHandler

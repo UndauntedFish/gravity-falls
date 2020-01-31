@@ -1,2 +1,5 @@
 # Player's max radius in which blocks will fall
-radius: 10.0 
+radius: 10.0
+
+# Maximum y-value to which blocks will be detected and anti-gravified.
+ymax: 127
